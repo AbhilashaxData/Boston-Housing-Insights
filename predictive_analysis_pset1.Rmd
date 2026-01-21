@@ -1,0 +1,83 @@
+---
+title: "PREDICTIVE ANALYTICS problem set 1"
+author: "Abhilasha Das"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(MASS)
+```
+# Q1) Report the “class” of the data set. How many rows and columns are in this data set? What do the rows and columns represent?
+```{r 1}
+## Class of the data
+class(Boston)
+## Dimensions of the data(rows and columns)
+dim(Boston)
+```
+## The rows represent specific suburban areas in Boston. The columns represent socio-economic indicators, environmental externalities, and urban infrastructure metrics. These include the dependent variable (medv) and various independent variables such as human capital indicators (lstat, ptratio), environmental quality (nox), and institutional factors (tax).
+
+# Q2) Create a smaller data set with the variables median value of owner-occupied homes, per capita crime rate, nitrogen oxides concentration, proportion of blacks and percentage of lower status of the population. Choosing median value of owner occupied homes as the response and the rest as the predictors, make scatter plots of the response versus each predictor. Present the scatter plots in different panels of the same graph. Comment on your findings.
+```{r 2}
+boston_subset = Boston[, c("medv", "crim", "nox", "black", "lstat")]
+par(mfrow = c(2, 2))
+plot(boston_subset$crim, boston_subset$medv, main="Price vs. Crime Rate", 
+     xlab="Per Capita Crime (crim)", ylab="Median Value (medv)", col="red")
+plot(boston_subset$nox, boston_subset$medv, main="Price vs. Pollution", 
+     xlab="Nitrogen Oxides (nox)", ylab="Median Value (medv)", col="darkblue")
+plot(boston_subset$black, boston_subset$medv, main="Price vs. Demographic (Black)", 
+     xlab="Black Population Index", ylab="Median Value (medv)", col="chocolate")
+
+plot(boston_subset$lstat, boston_subset$medv, main="Price vs. Economic Status", 
+     xlab="% Lower Status (lstat)", ylab="Median Value (medv)", col="pink4")
+```
+
+## FINDINGS
+#### 1)The relationship between per capita crime rate ($crim$) and $medv$ shows that the highest property values are exclusively clustered in low-crime areas. Safety is a localized public good. The data suggests that high crime rates act as a significant "tax" on property utility. Once crime passes a certain threshold, the $medv$ collapses to a lower bound, suggesting that safety is a threshold requirement for high-value real estate investment.
+#### 2)The negative correlation with nitrogen oxide levels confirms that pollution is a negative externality. Clean air is a "local public good" for which households show a high willingness to pay, causing property values to drop as pollution increases.
+#### 3)The concentration of high-value homes in areas with specific demographic indices suggests that the housing market in Boston may not be perfectly integrated, with demographic variables acting as proxies for unobserved neighborhood quality or social prestige. In urban economics, such clusters often reflect historical market imperfections where demographic shifts influence localized land rents.
+#### 4)There is a clear inverse relationship between the percentage of lower-status residents and home values.The curve is typically "L-shaped" rather than a straight line. This suggests that housing prices are extremely sensitive to initial increases in $lstat$, and it validates the Hedonic Pricing Theory, indicating that property values are highly sensitive to the socio-economic composition of a neighborhood.
+
+# Q3) Which suburb of Boston has lowest median value of owner-occupied homes? What are the values of the other predictors mentioned in (2), for that suburb. How do these values compare to the overall ranges for those predictors? Comment on your findings. Hint: Mention which percentile these values belong to.
+```{r 3}
+min_idx = which.min(Boston$medv)
+lowest_val_suburb = Boston[min_idx, c("medv", "crim", "nox", "black", "lstat")]
+overall_summary = summary(Boston[, c("medv", "crim", "nox", "black", "lstat")])
+percentiles = sapply(c("medv", "crim", "nox", "black", "lstat"), function(x) {
+  ecdf(Boston[[x]])(lowest_val_suburb[[x]]) * 100
+})
+
+lowest_val_suburb
+percentiles
+```
+## FINDINGS
+#### 1)$medv$ (0.40th Percentile): A median value at the 0.4th percentile signifies that this suburb occupies the absolute lower bound of the housing market. In terms of Hedonic Pricing Theory, the property value has collapsed to its reservation price due to the cumulative impact of multiple negative externalities.
+#### 2)$crim$ (98.81st Percentile): From an urban economics point of view, such a high crime rate acts as a prohibitive "tax" on residents, severely depressing demand and inward investment.
+#### 3)$nox$ (85.77th Percentile): High nitrogen oxide levels (exceeding 85% of all suburbs) point to significant environmental degradation. This suggests the area is likely an industrial zone or a high-traffic corridor, where residents suffer from "environmental injustice," further lowering the land rent.
+#### 4)$black$ (100th Percentile): A 100th percentile reading on the demographic index indicates the highest level of concentration in the dataset. Economically, this reflects spatial segregation and its effects that have isolated specific demographics in low-value, under-resourced tracts.
+#### 5)$lstat$ (97.83rd Percentile): With nearly 98% of the population belonging to the "lower status" category, this suburb exhibits a poverty trap. The high concentration of low-income households signifies a lack of social mobility and human capital, which is directly capitalized into the extremely low housing prices observed.
+
+# Q4) Does any suburb of Boston stand out for having notably high crime rates, tax rates, or pupil-teacher ratios? Hint: Use a boxplot to detect any outliers. If so, identify the suburbs that show the outlier values.
+```{r 5}
+par(mfrow = c(1, 3))
+boxplot(Boston$crim, main = "Crime Rate Outliers", 
+        col = "salmon", ylab = "Per Capita Crime Rate")
+boxplot(Boston$tax, main = "Tax Rate Outliers", 
+        col = "goldenrod2", ylab = "Full-value Property Tax")
+boxplot(Boston$ptratio, main = "Education Ratio Outliers", 
+        col = "lawngreen", ylab = "Pupil-Teacher Ratio")
+crime_outliers = which(Boston$crim %in% boxplot.stats(Boston$crim)$out)
+cat("Total high-crime outlier suburbs identified:",length(crime_outliers))
+print(crime_outliers)
+```
+## FINDINGS
+#### $crim$ : The boxplot identifies 66 suburbs as extreme outliers for crime.These outliers are concentrated in the latter portion of the dataset, specifically within the index range of 368 to 480. Per capita crime rates in these specific tracts are significantly higher than the city-wide average, indicating a high concentration of crime in a small cluster of neighborhoods.
+#### $tax$ : The boxplot typically shows no outliers for the property tax rate.
+#### $ptratio$ : A few suburbs stand out as outliers at the lower end of the scale. These specific suburbs have exceptionally low pupil-teacher ratios compared to the rest of Boston, representing districts with significantly higher educational resource allocation.
+
